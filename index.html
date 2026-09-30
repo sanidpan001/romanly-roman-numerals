@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Romanly — Roman Numeral Converter | Number to Roman Numerals &amp; Back</title>
+<meta name="description" content="Romanly is a free bidirectional Roman numeral converter. Convert numbers to Roman numerals and Roman numerals to numbers, with step-by-step breakdowns, invalid-form corrections, overline support up to 3,999,999, and a 1–100 reference chart.">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        stonebg: '#E7E5E4',
+        imperial: '#991B1B',
+        imperialdark: '#7F1D1D',
+        gold: '#A16207',
+        goldlight: '#D6A94C',
+        parchment: '#FAF6EF'
+      },
+      fontFamily: {
+        roman: ['Cinzel', 'Georgia', 'serif'],
+        body: ['"Crimson Pro"', 'Georgia', 'serif']
+      }
+    }
+  }
+};
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&family=Crimson+Pro:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  html { scroll-behavior: smooth; }
+  body { font-family: 'Crimson Pro', Georgia, serif; }
+  .marble {
+    background:
+      radial-gradient(ellipse 60% 40% at 15% 8%, rgba(255,255,255,.75), transparent 60%),
+      radial-gradient(ellipse 50% 35% at 85% 92%, rgba(255,255,255,.55), transparent 60%),
+      radial-gradient(ellipse 40% 30% at 70% 20%, rgba(120,113,108,.10), transparent 65%),
+      repeating-linear-gradient(115deg, rgba(120,113,108,.05) 0 2px, transparent 2px 26px),
+      linear-gradient(135deg, #EDEBE9 0%, #E7E5E4 35%, #DCD8D3 55%, #E7E5E4 75%, #D5D0CB 100%);
+  }
+  .tablet {
+    background: linear-gradient(180deg, #FDFBF7 0%, #FAF6EF 100%);
+    border: 1px solid #C9BFAE;
+    box-shadow: 0 1px 0 #fff inset, 0 10px 30px -12px rgba(127,29,29,.25);
+  }
+  .engraved { text-shadow: 0 1px 0 rgba(255,255,255,.6); }
+  .roman-input:focus { outline: 2px solid #A16207; outline-offset: 2px; }
+  .chart-cell { transition: transform .12s ease, background .12s ease; }
+  .chart-cell:hover { transform: translateY(-2px); }
+  .step-chip + .step-plus::before { content: '+'; }
+  .no-print {}
+  @media print { .no-print { display: none; } }
+  details.faq summary::-webkit-details-marker { display: none; }
+  details.faq summary { list-style: none; cursor: pointer; }
+  details.faq[open] .faq-arrow { transform: rotate(45deg); }
+  .faq-arrow { transition: transform .2s ease; }
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "What is 2026 in Roman numerals?",
+      "acceptedAnswer": { "@type": "Answer", "text": "2026 in Roman numerals is MMXXVI. It breaks down as MM (2,000) + XX (20) + VI (6). Romanly shows this place-by-place breakdown automatically when you convert any number." }
+    },
+    {
+      "@type": "Question",
+      "name": "How do I convert a number to Roman numerals?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Use the subtractive greedy method: repeatedly subtract the largest Roman value that fits (1000=M, 900=CM, 500=D, 400=CD, 100=C, 90=XC, 50=L, 40=XL, 10=X, 9=IX, 5=V, 4=IV, 1=I) and write down its symbol. For example, 944 = 900 (CM) + 40 (XL) + 4 (IV) = CMXLIV. Romanly performs these steps instantly and shows each one." }
+    },
+    {
+      "@type": "Question",
+      "name": "Why is 4 written as IV and not IIII?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Standard Roman numerals use subtractive notation: a smaller symbol placed before a larger one is subtracted, so IV means 5 − 1 = 4. Repeating I four times (IIII) is not standard form — although you will still see IIII on some traditional clock faces for symmetry with VIII. Romanly flags IIII as invalid and suggests IV." }
+    },
+    {
+      "@type": "Question",
+      "name": "What is the largest number you can write in Roman numerals?",
+      "acceptedAnswer": { "@type": "Answer", "text": "In the classic system the largest standard numeral is 3,999 (MMMCMXCIX). With the overline (vinculum) notation, where a bar over a letter multiplies it by 1,000, you can write up to 3,999,999 — for example 4,000 is written as IV with an overline. Romanly supports the full range from 1 to 3,999,999." }
+    },
+    {
+      "@type": "Question",
+      "name": "How do you read Roman numerals with a line over them?",
+      "acceptedAnswer": { "@type": "Answer", "text": "A horizontal line over a Roman numeral (called a vinculum or overline) multiplies its value by 1,000. So V with an overline means 5,000, X with an overline means 10,000, and IV with an overline means 4,000. Romanly renders these automatically for any number from 4,000 upward." }
+    },
+    {
+      "@type": "Question",
+      "name": "What are the rules for valid Roman numerals?",
+      "acceptedAnswer": { "@type": "Answer", "text": "The core rules are: (1) only the symbols I, V, X, L, C, D, M are used; (2) symbols are written from largest to smallest value, left to right; (3) I, X, C and M may repeat at most three times in a row; (4) V, L and D are never repeated; (5) subtraction is allowed only with the pairs IV, IX, XL, XC, CD and CM. Romanly validates every input against these rules and suggests the correct form when something breaks them." }
+    }
+  ]
+}
+</script>
+</head>
+<body id="top" class="bg-stonebg text-stone-800 antialiased">
+
+<!-- ============ STICKY HEADER ============ -->
+<header class="sticky top-0 z-50 bg-imperialdark border-b-2 border-gold shadow-lg">
+  <div class="mx-auto max-w-6xl px-4 sm:px-6 h-16 flex items-center justify-between">
+    <a href="#top" class="flex items-center gap-2.5">
+      <span class="text-2xl leading-none" aria-hidden="true">🏛</span>
+      <span class="font-roman font-800 text-2xl tracking-wide text-amber-50" style="font-weight:800">Romanly</span>
+      <span class="hidden sm:inline-block text-[10px] tracking-[0.28em] uppercase text-goldlight/90 mt-1">Numeri Romani</span>
+    </a>
+    <nav class="flex items-center gap-5 text-sm">
+      <a href="#top" class="text-amber-50/90 hover:text-goldlight transition font-medium tracking-wide">Home</a>
+      <span class="text-goldlight/50" aria-hidden="true">|</span>
+      <a href="https://fixoraa.tech" class="text-amber-50/90 hover:text-goldlight transition font-medium tracking-wide">More Tools</a>
+    </nav>
+  </div>
+</header>
+
+<!-- ============ TOP AD (verbatim) ============ -->
+<div class="no-print mx-auto max-w-6xl px-4 sm:px-6 pt-4" role="complementary" aria-label="Advertisement">
+  <div class="mx-auto text-center" style="max-width:728px">
+    <span class="block text-[10px] tracking-[0.18em] uppercase text-slate-400 mb-1.5">Advertisement</span>
+    <div class="flex justify-center overflow-hidden">
+      <div class="origin-top scale-[0.44] sm:scale-100 shrink-0">
+        <script>
+          atOptions = { 'key' : '4e68ac77881c17fe128a46565d9a4e8c', 'format' : 'iframe', 'height' : 90, 'width' : 728, 'params' : {} };
+        </script>
+        <script src="https://www.highrevenueformat.com/4e68ac77881c17fe128a46565d9a4e8c/invoke.js"></script>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ HERO + BIDIRECTIONAL CONVERTER ============ -->
+<main class="marble">
+  <section class="mx-auto max-w-6xl px-4 sm:px-6 pt-8 pb-10">
+    <div class="text-center max-w-3xl mx-auto">
+      <div class="inline-flex items-center gap-2 bg-imperial text-amber-50 text-xs font-semibold tracking-[0.18em] uppercase px-4 py-1.5 rounded-full shadow mb-5">
+        <span aria-hidden="true">✦</span> Unlimited Free Usage <span aria-hidden="true">✦</span>
+      </div>
+      <h1 class="font-roman text-4xl sm:text-5xl text-imperialdark engraved mb-3" style="font-weight:700">Roman Numeral Converter</h1>
+      <p class="text-lg text-stone-600 mb-2">Convert <strong class="text-imperial">numbers → Roman numerals</strong> and <strong class="text-imperial">Roman numerals → numbers</strong>, instantly — with step-by-step breakdowns, invalid-form corrections, and overline support up to <strong>3,999,999</strong>.</p>
+      <p class="text-stone-500 text-sm mb-6">No signup. No paywall. No watermark. Everything runs in your browser.</p>
+      <div class="flex flex-wrap justify-center gap-2 mb-8" id="popular-chips" aria-label="Popular conversions">
+        <span class="text-xs uppercase tracking-widest text-stone-500 self-center mr-1">Try:</span>
+      </div>
+    </div>
+
+    <!-- Bidirectional converter cards -->
+    <div class="grid gap-6 lg:grid-cols-2 items-start">
+
+      <!-- Card 1: Number -> Roman -->
+      <section class="tablet rounded-xl p-5 sm:p-7" aria-labelledby="n2r-title">
+        <div class="flex items-center gap-3 mb-1">
+          <span class="w-10 h-10 rounded-full bg-imperial text-amber-50 font-roman flex items-center justify-center text-lg shadow" aria-hidden="true">Ⅰ</span>
+          <div>
+            <h2 id="n2r-title" class="font-roman text-xl text-imperialdark" style="font-weight:700">Number → Roman</h2>
+            <p class="text-sm text-stone-500">Type any whole number from 1 to 3,999,999</p>
+          </div>
+        </div>
+        <label for="num-input" class="sr-only">Enter a number</label>
+        <input id="num-input" type="text" inputmode="numeric" autocomplete="off" spellcheck="false"
+               placeholder="e.g. 2026"
+               class="roman-input mt-4 w-full text-2xl font-roman bg-white/80 border border-stone-300 rounded-lg px-4 py-3 text-imperialdark placeholder:text-stone-400" style="font-weight:600">
+        <p id="num-error" class="hidden mt-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2" role="alert"></p>
+        <div id="num-result-wrap" class="hidden mt-4">
+          <div class="flex items-start justify-between gap-3 bg-imperialdark rounded-lg px-4 py-4 shadow-inner">
+            <div class="min-w-0">
+              <div class="text-[10px] tracking-[0.25em] uppercase text-goldlight/80 mb-1">Roman numeral</div>
+              <div id="num-result" class="font-roman text-3xl sm:text-4xl text-amber-50 break-all leading-snug" style="font-weight:700"></div>
+              <div id="num-result-note" class="text-xs text-amber-100/70 mt-1"></div>
+            </div>
+            <button id="num-copy" class="shrink-0 mt-1 text-xs font-semibold tracking-wide uppercase bg-gold hover:bg-yellow-700 text-white rounded-lg px-3 py-2 transition" title="Copy result">Copy</button>
+          </div>
+          <!-- Step-by-step breakdown -->
+          <div class="mt-4 border-t-2 border-dashed border-stone-300 pt-4">
+            <h3 class="font-roman text-sm uppercase tracking-[0.2em] text-gold mb-2" style="font-weight:700">How it is built</h3>
+            <p id="num-groups" class="text-lg text-stone-700 leading-relaxed"></p>
+            <ol id="num-steps" class="mt-3 space-y-1.5 text-[15px]"></ol>
+          </div>
+        </div>
+      </section>
+
+      <!-- Card 2: Roman -> Number -->
+      <section class="tablet rounded-xl p-5 sm:p-7" aria-labelledby="r2n-title">
+        <div class="flex items-center gap-3 mb-1">
+          <span class="w-10 h-10 rounded-full bg-gold text-white font-roman flex items-center justify-center text-lg shadow" aria-hidden="true">Ⅹ</span>
+          <div>
+            <h2 id="r2n-title" class="font-roman text-xl text-imperialdark" style="font-weight:700">Roman → Number</h2>
+            <p class="text-sm text-stone-500">Paste any Roman numeral — invalid forms get corrected</p>
+          </div>
+        </div>
+        <label for="roman-input" class="sr-only">Enter a Roman numeral</label>
+        <input id="roman-input" type="text" autocomplete="off" spellcheck="false" autocapitalize="characters"
+               placeholder="e.g. MMXXVI"
+               class="roman-input mt-4 w-full text-2xl font-roman uppercase bg-white/80 border border-stone-300 rounded-lg px-4 py-3 text-imperialdark placeholder:text-stone-400" style="font-weight:600">
+        <p id="roman-error" class="hidden mt-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2" role="alert"></p>
+        <div id="roman-suggest-wrap" class="hidden mt-2">
+          <button id="roman-suggest-btn" class="text-sm font-semibold text-imperial hover:text-imperialdark underline underline-offset-2 decoration-gold"></button>
+        </div>
+        <div id="roman-result-wrap" class="hidden mt-4">
+          <div class="flex items-start justify-between gap-3 bg-imperialdark rounded-lg px-4 py-4 shadow-inner">
+            <div class="min-w-0">
+              <div class="text-[10px] tracking-[0.25em] uppercase text-goldlight/80 mb-1">Arabic number</div>
+              <div id="roman-result" class="font-roman text-3xl sm:text-4xl text-amber-50" style="font-weight:700"></div>
+              <div id="roman-canonical" class="text-xs text-amber-100/70 mt-1"></div>
+            </div>
+            <button id="roman-copy" class="shrink-0 mt-1 text-xs font-semibold tracking-wide uppercase bg-gold hover:bg-yellow-700 text-white rounded-lg px-3 py-2 transition" title="Copy result">Copy</button>
+          </div>
+          <div class="mt-4 border-t-2 border-dashed border-stone-300 pt-4">
+            <h3 class="font-roman text-sm uppercase tracking-[0.2em] text-gold mb-2" style="font-weight:700">Token breakdown</h3>
+            <ol id="roman-tokens" class="space-y-1.5 text-[15px]"></ol>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ============ INVALID-FORM LAB ============ -->
+    <section class="mt-8 tablet rounded-xl p-5 sm:p-7" aria-labelledby="lab-title">
+      <div class="flex items-center gap-3 mb-2">
+        <span class="text-2xl" aria-hidden="true">⚖</span>
+        <div>
+          <h2 id="lab-title" class="font-roman text-xl text-imperialdark" style="font-weight:700">Invalid-Form Lab</h2>
+          <p class="text-sm text-stone-500">Not every arrangement of letters is a real Roman numeral. Click a mistake to see the correction.</p>
+        </div>
+      </div>
+      <div class="flex flex-wrap gap-2 mt-3" id="invalid-chips"></div>
+    </section>
+
+    <!-- ============ 1–100 CHART ============ -->
+    <section class="mt-8" aria-labelledby="chart-title">
+      <div class="text-center mb-4">
+        <h2 id="chart-title" class="font-roman text-2xl sm:text-3xl text-imperialdark engraved" style="font-weight:700">Roman Numerals 1 to 100</h2>
+        <p class="text-stone-500 text-sm mt-1">Click any cell to load it into the converter.</p>
+      </div>
+      <div id="chart-grid" class="grid grid-cols-5 sm:grid-cols-10 gap-1.5 sm:gap-2"></div>
+    </section>
+
+    <!-- ============ HISTORY ============ -->
+    <section class="mt-8 tablet rounded-xl p-5 sm:p-7" aria-labelledby="hist-title">
+      <div class="flex items-center justify-between mb-2">
+        <h2 id="hist-title" class="font-roman text-xl text-imperialdark" style="font-weight:700">Recent Conversions</h2>
+        <button id="hist-clear" class="text-xs uppercase tracking-widest text-stone-500 hover:text-imperial transition">Clear</button>
+      </div>
+      <p id="hist-empty" class="text-sm text-stone-500 italic">Nothing yet — your recent conversions will appear here (stored only in this browser).</p>
+      <ul id="hist-list" class="mt-2 divide-y divide-stone-200"></ul>
+    </section>
+  </section>
+</main>
+
+<!-- ============ BOTTOM AD (verbatim) ============ -->
+<div class="no-print mx-auto max-w-6xl px-4 sm:px-6 pb-4" role="complementary" aria-label="Advertisement">
+  <div class="mx-auto text-center" style="max-width:728px">
+    <span class="block text-[10px] tracking-[0.18em] uppercase text-slate-400 mb-1.5">Advertisement</span>
+    <div class="flex justify-center overflow-hidden">
+      <script async src="https://js.wpadmngr.com/static/adManager.js" data-admpid="464498"></script>
+    </div>
+  </div>
+</div>
+
+<!-- ============ SEO ARTICLE ============ -->
+<article id="seo-article" class="bg-parchment border-t-4 border-double border-gold/60">
+  <div class="mx-auto max-w-3xl px-4 sm:px-6 py-12 text-[17px] leading-relaxed text-stone-700">
+    <p class="text-xs uppercase tracking-[0.3em] text-gold mb-2" style="font-weight:700">The complete guide</p>
+    <h2 class="font-roman text-3xl text-imperialdark mb-6" style="font-weight:700">Roman Numerals: History, Rules, and How to Convert Them</h2>
+
+    <h3 class="font-roman text-xl text-imperialdark mt-8 mb-3" style="font-weight:700">What Are Roman Numerals?</h3>
+    <p class="mb-4">Roman numerals are one of the oldest number systems still in everyday use. Instead of the place-value digits we use today (0–9), the Romans wrote numbers with seven capital letters, each standing for a fixed value: <strong>I</strong> = 1, <strong>V</strong> = 5, <strong>X</strong> = 10, <strong>L</strong> = 50, <strong>C</strong> = 100, <strong>D</strong> = 500, and <strong>M</strong> = 1,000. Larger values are built by combining these symbols, generally from the largest value on the left to the smallest on the right, and adding them up. So <strong>XVII</strong> is 10 + 5 + 1 + 1 = 17, and <strong>MDCLXVI</strong> — a famous example because it uses every symbol exactly once, in descending order — is 1,000 + 500 + 100 + 50 + 10 + 5 + 1 = 1,666.</p>
+    <p class="mb-4">There is no symbol for zero in the Roman system, and no concept of place value the way modern arithmetic uses it. That made multiplication and division genuinely painful for Roman merchants and engineers, which is one reason the Hindu-Arabic digits eventually replaced Roman numerals for calculation across Europe. Yet the symbols never fully disappeared. More than two thousand years after they were carved into stone across an empire, you still meet them on clock faces, in book chapters, in the names of monarchs and popes, in film copyright dates, and in the titles of major sporting events.</p>
+
+    <h3 class="font-roman text-xl text-imperialdark mt-8 mb-3" style="font-weight:700">A Brief History</h3>
+    <p class="mb-4">The system evolved from tally marks used by the Etruscans, the civilization that preceded Rome in central Italy. A single stroke <strong>I</strong> meant one; every fifth stroke was crossed to make counting easier, and that crossed tally gradually became <strong>V</strong>. Two fives made <strong>X</strong>. The letters themselves were a later convenience: educated Romans noticed that the words for the values already began with handy letters — <em>decem</em> (ten) gave <strong>X</strong> no help, but <em>centum</em> (hundred) gave <strong>C</strong> and <em>mille</em> (thousand) gave <strong>M</strong> — and the system settled into the seven symbols we know.</p>
+    <p class="mb-4">Subtractive notation — writing <strong>IV</strong> for 4 instead of <strong>IIII</strong> — was used inconsistently in ancient Rome itself. Inscriptions from the Republic often show the additive forms (<strong>IIII</strong>, <strong>XXXX</strong>), and the strict subtractive rules taught in schools today are largely a Renaissance standardization. That is why traditional clockmakers still put <strong>IIII</strong> on clock faces for 4 o'clock: they are following the older additive custom, and it balances the visual weight of <strong>VIII</strong> on the opposite side of the dial. During the Middle Ages, Roman numerals remained the standard across Europe for commerce, dates, and page numbers until Fibonacci's promotion of Hindu-Arabic digits in the 13th century began their long retreat from arithmetic.</p>
+
+    <h3 class="font-roman text-xl text-imperialdark mt-8 mb-3" style="font-weight:700">The Seven Symbols and Their Values</h3>
+    <div class="overflow-x-auto mb-4">
+      <table class="w-full text-center border-collapse text-[15px]">
+        <thead>
+          <tr class="bg-imperialdark text-amber-50 font-roman text-sm">
+            <th class="border border-imperialdark px-3 py-2">Symbol</th><th class="border border-imperialdark px-3 py-2">I</th><th class="border border-imperialdark px-3 py-2">V</th><th class="border border-imperialdark px-3 py-2">X</th><th class="border border-imperialdark px-3 py-2">L</th><th class="border border-imperialdark px-3 py-2">C</th><th class="border border-imperialdark px-3 py-2">D</th><th class="border border-imperialdark px-3 py-2">M</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="bg-white">
+            <td class="border border-stone-300 px-3 py-2 font-semibold">Value</td><td class="border border-stone-300 px-3 py-2">1</td><td class="border border-stone-300 px-3 py-2">5</td><td class="border border-stone-300 px-3 py-2">10</td><td class="border border-stone-300 px-3 py-2">50</td><td class="border border-stone-300 px-3 py-2">100</td><td class="border border-stone-300 px-3 py-2">500</td><td class="border border-stone-300 px-3 py-2">1,000</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="mb-4">Notice the pattern: the values alternate between 1, 5, and 10 times powers of ten (1, 5, 10, 50, 100, 500, 1000). Only <strong>I</strong>, <strong>X</strong>, and <strong>C</strong> — the "one" symbols — may be used for subtraction, and each may only be subtracted from the next two higher values. That is why the only legal subtractive pairs are <strong>IV</strong> (4), <strong>IX</strong> (9), <strong>XL</strong> (40), <strong>XC</strong> (90), <strong>CD</strong> (400), and <strong>CM</strong> (900). Forms like <strong>IL</strong> for 49 or <strong>IC</strong> for 99 were never standard, even though the arithmetic works out: 49 is <strong>XLIX</strong> and 99 is <strong>XCIX</strong>.</p>
+
+    <h3 class="font-roman text-xl text-imperialdark mt-8 mb-3" style="font-weight:700">How to Convert a Number to Roman Numerals</h3>
+    <p class="mb-4">The reliable method is the greedy subtractive algorithm: keep subtracting the largest Roman value that fits into what remains, and write down its symbol each time. Take <strong>2026 in Roman numerals</strong>, one of the most searched conversions. Start with 2,026. The largest value that fits is 1,000 (<strong>M</strong>), leaving 1,026. Another 1,000 (<strong>M</strong>) leaves 26. The largest fit now is 10 (<strong>X</strong>), leaving 16, then another 10 (<strong>X</strong>) leaves 6. Then 5 (<strong>V</strong>) leaves 1, and finally 1 (<strong>I</strong>) leaves 0. Reading the symbols in order: <strong>MMXXVI</strong>. Grouped by place value it is even clearer — thousands: <strong>MM</strong> (2,000), hundreds: none, tens: <strong>XX</strong> (20), ones: <strong>VI</strong> (6).</p>
+    <p class="mb-4">A trickier example shows why the subtractive pairs matter: <strong>944</strong>. The largest fit is 900, which is <strong>CM</strong>, leaving 44. Then 40 is <strong>XL</strong>, leaving 4, which is <strong>IV</strong>. The answer is <strong>CMXLIV</strong> — not "DCCCCXXXXIIII", which is what you would get by adding without subtraction. The converter above performs exactly these steps and lists each one, so you can follow the logic for any number instead of just copying an answer.</p>
+
+    <h3 class="font-roman text-xl text-imperialdark mt-8 mb-3" style="font-weight:700">Reading Roman Numerals: Roman to Number</h3>
+    <p class="mb-4">Converting in the other direction uses the mirror image of the same idea. Scan the numeral left to right: when a smaller value comes before a larger one, subtract the smaller; otherwise add. For <strong>MCMXCIV</strong>: <strong>M</strong> (1,000) is followed by <strong>C</strong>, which is smaller, so add 1,000. <strong>C</strong> comes before <strong>M</strong>, so subtract: −100 + 1,000 = 900. <strong>X</strong> before <strong>C</strong> gives 90, and <strong>I</strong> before <strong>V</strong> gives 4. Total: 1,000 + 900 + 90 + 4 = <strong>1,994</strong>. One caution: this mechanical rule alone will happily "read" nonsense like <strong>IL</strong> as 49, which is why a good converter also validates the form. Real Roman-numeral reading means checking that the numeral obeys the standard rules first — something Romanly does automatically, flagging non-standard input and proposing the correct spelling.</p>
+
+    <h3 class="font-roman text-xl text-imperialdark mt-8 mb-3" style="font-weight:700">Big Numbers: The Overline (Vinculum)</h3>
+    <p class="mb-4">The classic system tops out at <strong>MMMCMXCIX</strong> (3,999), because <strong>M</strong> may not repeat four times. The Romans themselves solved this with the <em>vinculum</em>: a horizontal bar drawn over a numeral multiplies its value by 1,000. So <strong>V</strong> with an overline means 5,000, <strong>X</strong> with an overline means 10,000, and <strong>IV</strong> with an overline means 4,000. With this notation the writable range extends to 3,999,999 — written as <strong>MMMCMXCIX</strong> with an overline followed by <strong>CMXCIX</strong>. Romanly renders the overline automatically for every number from 4,000 upward, using the standard combining overline character, and it can read such numerals back as well. In plain-text contexts where the bar cannot be drawn, you may see the thousands part written in parentheses instead, e.g. (IV) for 4,000.</p>
+
+    <h3 class="font-roman text-xl text-imperialdark mt-8 mb-3" style="font-weight:700">Common Mistakes and Invalid Forms</h3>
+    <p class="mb-4">Most errors come from five misunderstandings. <strong>First</strong>, repeating a "one" symbol more than three times: <strong>IIII</strong>, <strong>XXXX</strong>, <strong>CCCC</strong> should be <strong>IV</strong>, <strong>XL</strong>, <strong>CD</strong>. <strong>Second</strong>, repeating <strong>V</strong>, <strong>L</strong>, or <strong>D</strong> at all: <strong>VV</strong> should be <strong>X</strong>, <strong>LL</strong> should be <strong>C</strong>, <strong>DD</strong> should be <strong>M</strong>. <strong>Third</strong>, inventing subtractive pairs: <strong>IL</strong>, <strong>IC</strong>, <strong>XM</strong>, and <strong>VL</strong> are never valid — 49 is <strong>XLIX</strong>, 99 is <strong>XCIX</strong>, 990 is <strong>CMXC</strong>, and 45 is <strong>XLV</strong>. <strong>Fourth</strong>, writing symbols out of order, like <strong>IXL</strong> instead of <strong>LIX</strong> (59). <strong>Fifth</strong>, reusing a subtracted symbol, as in <strong>IVI</strong> instead of <strong>V</strong>. The Invalid-Form Lab above lets you click through these mistakes and watch each one get diagnosed with its proper correction.</p>
+
+    <h3 class="font-roman text-xl text-imperialdark mt-8 mb-3" style="font-weight:700">Roman Numerals 1 to 100</h3>
+    <p class="mb-4">The 1–100 range is where almost everyone meets Roman numerals: clock faces, chapter numbers, and school exercises. The reference chart above lists every value from <strong>I</strong> (1) to <strong>C</strong> (100). A few landmarks worth memorizing: 4 = <strong>IV</strong>, 9 = <strong>IX</strong>, 14 = <strong>XIV</strong>, 40 = <strong>XL</strong>, 44 = <strong>XLIV</strong>, 49 = <strong>XLIX</strong>, 90 = <strong>XC</strong>, 99 = <strong>XCIX</strong>. Notice how 44 (<strong>XLIV</strong>) and 99 (<strong>XCIX</strong>) each use two subtractive pairs — they are the classic test cases for whether a converter handles subtraction correctly, and both are handled properly here.</p>
+
+    <h3 class="font-roman text-xl text-imperialdark mt-8 mb-3" style="font-weight:700">Where Roman Numerals Are Still Used</h3>
+    <p class="mb-4">Far from being a museum piece, the system survives anywhere tradition matters more than arithmetic. Monarchs and popes take Roman regnal numbers (Elizabeth <strong>II</strong>, Louis <strong>XIV</strong>, John Paul <strong>II</strong>). Major films still stamp copyright dates in Roman numerals at the end of credits — a practice that also quietly obscures the year from casual viewers. The Super Bowl numbers its games this way (Super Bowl <strong>LIX</strong> was the 59th). Books use them for front-matter pages and chapter headings, outlines nest them as top-level markers, and formal clocks keep <strong>IIII</strong> for four in a nod to the old additive style. Chemists name oxidation states with them (iron(<strong>II</strong>)), and musicians analyze chords with them (<strong>I–IV–V</strong> progressions). Whenever you encounter one of these and need its value — or need to write a year, an anniversary, or a tattoo date the classical way — a bidirectional converter with validation is the fastest reliable route.</p>
+
+    <h3 class="font-roman text-xl text-imperialdark mt-8 mb-3" style="font-weight:700">2026 in Roman Numerals and Other Popular Years</h3>
+    <p class="mb-4">Because year conversions dominate search traffic, here are the recent and upcoming years in one place: 2020 = <strong>MMXX</strong>, 2021 = <strong>MMXXI</strong>, 2022 = <strong>MMXXII</strong>, 2023 = <strong>MMXXIII</strong>, 2024 = <strong>MMXXIV</strong>, 2025 = <strong>MMXXV</strong>, <strong>2026 = MMXXVI</strong>, 2027 = <strong>MMXXVII</strong>, 2028 = <strong>MMXXVIII</strong>, 2029 = <strong>MMXXIX</strong>, 2030 = <strong>MMXXX</strong>. Round-number milestones: 2000 = <strong>MM</strong>, 1999 = <strong>MCMXCIX</strong>, 1000 = <strong>M</strong>, 500 = <strong>D</strong>, 100 = <strong>C</strong>. Type any of these years — or any number up to 3,999,999 — into the converter above to see the full step-by-step construction.</p>
+  </div>
+</article>
+
+<!-- ============ VISIBLE FAQS ============ -->
+<section class="bg-stonebg border-t border-stone-300" aria-labelledby="faq-title">
+  <div class="mx-auto max-w-3xl px-4 sm:px-6 py-12">
+    <h2 id="faq-title" class="font-roman text-2xl sm:text-3xl text-imperialdark text-center mb-8" style="font-weight:700">Frequently Asked Questions</h2>
+    <div class="space-y-3">
+      <details class="faq tablet rounded-lg px-5 py-4">
+        <summary class="font-roman text-imperialdark flex items-center justify-between gap-3" style="font-weight:700"><span>What is 2026 in Roman numerals?</span><span class="faq-arrow text-gold text-xl leading-none">＋</span></summary>
+        <p class="mt-2 text-stone-600">2026 in Roman numerals is <strong>MMXXVI</strong> — MM (2,000) + XX (20) + VI (6). Romanly shows this place-by-place breakdown automatically for every conversion.</p>
+      </details>
+      <details class="faq tablet rounded-lg px-5 py-4">
+        <summary class="font-roman text-imperialdark flex items-center justify-between gap-3" style="font-weight:700"><span>How do I convert a number to Roman numerals?</span><span class="faq-arrow text-gold text-xl leading-none">＋</span></summary>
+        <p class="mt-2 text-stone-600">Repeatedly subtract the largest Roman value that fits (1000=M, 900=CM, 500=D, 400=CD, 100=C, 90=XC, 50=L, 40=XL, 10=X, 9=IX, 5=V, 4=IV, 1=I) and write its symbol. For 944: 900 (CM) + 40 (XL) + 4 (IV) = <strong>CMXLIV</strong>. Romanly performs and displays each step.</p>
+      </details>
+      <details class="faq tablet rounded-lg px-5 py-4">
+        <summary class="font-roman text-imperialdark flex items-center justify-between gap-3" style="font-weight:700"><span>Why is 4 written as IV and not IIII?</span><span class="faq-arrow text-gold text-xl leading-none">＋</span></summary>
+        <p class="mt-2 text-stone-600">Standard form uses subtractive notation: a smaller symbol before a larger one is subtracted, so IV = 5 − 1 = 4. <strong>IIII</strong> is not standard — though traditional clock faces still use it for visual symmetry with VIII. Romanly flags IIII and suggests IV.</p>
+      </details>
+      <details class="faq tablet rounded-lg px-5 py-4">
+        <summary class="font-roman text-imperialdark flex items-center justify-between gap-3" style="font-weight:700"><span>What is the largest number you can write in Roman numerals?</span><span class="faq-arrow text-gold text-xl leading-none">＋</span></summary>
+        <p class="mt-2 text-stone-600">Classically 3,999 (<strong>MMMCMXCIX</strong>). With the overline (vinculum) notation — a bar that multiplies by 1,000 — the range extends to <strong>3,999,999</strong>, which Romanly fully supports.</p>
+      </details>
+      <details class="faq tablet rounded-lg px-5 py-4">
+        <summary class="font-roman text-imperialdark flex items-center justify-between gap-3" style="font-weight:700"><span>How do you read Roman numerals with a line over them?</span><span class="faq-arrow text-gold text-xl leading-none">＋</span></summary>
+        <p class="mt-2 text-stone-600">The overline (vinculum) multiplies the value by 1,000: V with a bar = 5,000, X with a bar = 10,000, IV with a bar = 4,000. Romanly renders and reads these automatically for numbers of 4,000 and above.</p>
+      </details>
+      <details class="faq tablet rounded-lg px-5 py-4">
+        <summary class="font-roman text-imperialdark flex items-center justify-between gap-3" style="font-weight:700"><span>What are the rules for valid Roman numerals?</span><span class="faq-arrow text-gold text-xl leading-none">＋</span></summary>
+        <p class="mt-2 text-stone-600">Only I, V, X, L, C, D, M are used; symbols run largest-to-smallest; I, X, C, M repeat at most three times; V, L, D never repeat; and only the pairs IV, IX, XL, XC, CD, CM may subtract. Romanly validates every input and suggests corrections.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<footer class="bg-imperialdark border-t-2 border-gold">
+  <div class="mx-auto max-w-6xl px-4 sm:px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+    <div class="flex items-center gap-2">
+      <span class="text-xl" aria-hidden="true">🏛</span>
+      <span class="font-roman text-amber-50 text-lg" style="font-weight:700">Romanly</span>
+      <span class="text-goldlight/70 text-xs tracking-[0.25em] uppercase">SPQR · Est. MMXXVI</span>
+    </div>
+    <nav class="flex items-center gap-5 text-sm">
+      <a href="#top" class="text-amber-50/80 hover:text-goldlight transition">Home</a>
+      <a href="https://fixoraa.tech" class="text-amber-50/80 hover:text-goldlight transition">More Tools</a>
+    </nav>
+  </div>
+  <p class="text-center text-amber-100/40 text-xs pb-6 px-4">Free unlimited Roman numeral conversion. All calculations happen in your browser — nothing is uploaded.</p>
+</footer>
+
+<script id="romanly-core">
+/* ============================================================
+   Romanly core — pure functions, no DOM access.
+   Shared verbatim between this page and the Node test suite.
+   ============================================================ */
+var RN_OVERLINE = '̅';
+var RN_MAX = 3999999;
+
+var RN_TABLE = [
+  [1000, 'M'], [900, 'CM'], [500, 'D'], [400, 'CD'],
+  [100, 'C'], [90, 'XC'], [50, 'L'], [40, 'XL'],
+  [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']
+];
+var RN_VALUES = { I: 1, V: 5, X: 10, L: 50, C: 100, D: 500, M: 1000 };
+var RN_PAIRS = { IV: 4, IX: 9, XL: 40, XC: 90, CD: 400, CM: 900 };
+
+function rnFmt(n) {
+  return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+/* Standard conversion, 1..3999. Returns null outside range. */
+function rnToStandard(n) {
+  if (typeof n !== 'number' || n % 1 !== 0 || n < 1 || n > 3999) return null;
+  var out = '';
+  for (var i = 0; i < RN_TABLE.length; i++) {
+    var v = RN_TABLE[i][0], sym = RN_TABLE[i][1];
+    while (n >= v) { out += sym; n -= v; }
+  }
+  return out;
+}
+
+function rnOverline(str) {
+  return str.split('').map(function (ch) { return ch + RN_OVERLINE; }).join('');
+}
+
+/* Full conversion, 1..3999999. Overline (x1000) used for the thousands group. */
+function rnToRoman(n) {
+  if (typeof n !== 'number' || n % 1 !== 0 || n < 1 || n > RN_MAX) return null;
+  if (n < 4000) return rnToStandard(n);
+  var high = Math.floor(n / 1000), low = n % 1000;
+  var out = rnOverline(rnToStandard(high));
+  if (low > 0) out += rnToStandard(low);
+  return out;
+}
+
+/* Lenient left-to-right value of a plain letter array (ignores form rules). */
+function rnLenient(chars) {
+  var total = 0;
+  for (var i = 0; i < chars.length; i++) {
+    var v = RN_VALUES[chars[i]];
+    var nv = i + 1 < chars.length ? RN_VALUES[chars[i + 1]] : 0;
+    total += (nv > v) ? -v : v;
+  }
+  return total;
+}
+
+/* Greedy tokenization of a valid letter array into {sym, value} tokens. */
+function rnTokenize(chars) {
+  var toks = [], i = 0;
+  while (i < chars.length) {
+    var pair = chars[i] + (chars[i + 1] || '');
+    if (RN_PAIRS[pair]) { toks.push({ sym: pair, value: RN_PAIRS[pair] }); i += 2; }
+    else { toks.push({ sym: chars[i], value: RN_VALUES[chars[i]] }); i += 1; }
+  }
+  return toks;
+}
+
+/* Token-sum lenient value: greedy valid-pair tokenization, then plain sum.
+   Used for ordering-type errors where the writer clearly meant each
+   valid chunk separately (e.g. "IXL" = IX + L = 59). */
+function rnTokenSum(chars) {
+  var t = 0;
+  rnTokenize(chars).forEach(function (tk) { t += tk.value; });
+  return t;
+}
+
+/*
+ * Validate a Roman numeral string.
+ * Returns {ok:true, value, roman, tokens:[{sym,value,over}]}
+ * or {ok:false, code, message, suggestion, suggestionValue}.
+ */
+function rnValidate(raw) {
+  var s = String(raw == null ? '' : raw).toUpperCase().replace(/[\s,]/g, '');
+  if (!s) {
+    return { ok: false, code: 'empty', message: 'Type a Roman numeral first — for example MMXXVI.' };
+  }
+  var chars = [], overs = [];
+  for (var i = 0; i < s.length; i++) {
+    var ch = s[i];
+    if (ch === RN_OVERLINE) {
+      return { ok: false, code: 'stray-overline', message: 'A stray overline mark was found. The bar goes right after the letter it multiplies — e.g. IV with an overline means 4 × 1,000.' };
+    }
+    var over = s[i + 1] === RN_OVERLINE;
+    chars.push(ch); overs.push(over);
+    if (over) i++;
+  }
+  var bad = [];
+  for (var j = 0; j < chars.length; j++) {
+    if (!RN_VALUES[chars[j]] && bad.indexOf(chars[j]) < 0) bad.push(chars[j]);
+  }
+  if (bad.length) {
+    return { ok: false, code: 'bad-chars', message: '“' + bad.join(' ') + '” ' + (bad.length > 1 ? 'are' : 'is') + ' not Roman numeral symbols. Only I, V, X, L, C, D and M are allowed.' };
+  }
+  var seenPlain = false;
+  for (var k = 0; k < overs.length; k++) {
+    if (!overs[k]) seenPlain = true;
+    else if (seenPlain) {
+      return { ok: false, code: 'mixed-overline', message: 'Overlined letters (the ×1,000 group) must come before plain letters — e.g. IV with an overline followed by X means 4,010.' };
+    }
+  }
+  var highChars = [], lowChars = [];
+  for (var m = 0; m < chars.length; m++) { (overs[m] ? highChars : lowChars).push(chars[m]); }
+  var highVal = highChars.length ? rnLenient(highChars) : 0;
+  var lowVal = lowChars.length ? rnLenient(lowChars) : 0;
+  var total = highVal * 1000 + lowVal;
+  var canonical = (total >= 1 && total <= RN_MAX) ? rnToRoman(total) : null;
+
+  /* Build the normalized input (letters + their overlines as typed). */
+  var typed = '';
+  for (var t = 0; t < chars.length; t++) typed += chars[t] + (overs[t] ? RN_OVERLINE : '');
+
+  if (canonical && typed === canonical) {
+    var tokens = [];
+    rnTokenize(highChars).forEach(function (tk) { tokens.push({ sym: rnOverline(tk.sym), value: tk.value * 1000, over: true }); });
+    rnTokenize(lowChars).forEach(function (tk) { tokens.push({ sym: tk.sym, value: tk.value, over: false }); });
+    return { ok: true, value: total, roman: canonical, tokens: tokens };
+  }
+
+  /* ---- invalid: diagnose with a specific, helpful message ---- */
+  if (!canonical) {
+    return { ok: false, code: 'range', message: 'That value is outside the supported range of 1 to 3,999,999.' };
+  }
+  var letters = chars.join('');
+  /* Token-sum intent (for ordering-type mistakes): e.g. "IXL" = IX + L = 59. */
+  var total2 = (highChars.length ? rnTokenSum(highChars) : 0) * 1000 +
+               (lowChars.length ? rnTokenSum(lowChars) : 0);
+  var canonical2 = (total2 >= 1 && total2 <= RN_MAX) ? rnToRoman(total2) : null;
+  var didYouMean = ' Did you mean ' + canonical + ' (' + rnFmt(total) + ')?';
+  var m4 = letters.match(/(I{4,}|X{4,}|C{4,}|M{4,})/);
+  if (m4) {
+    return { ok: false, code: 'too-many-repeats', suggestion: canonical, suggestionValue: total,
+      message: '“' + m4[1] + '” is not standard — “' + m4[1][0] + '” may appear at most three times in a row.' + didYouMean };
+  }
+  var mrep = letters.match(/(VV+|LL+|DD+)/);
+  if (mrep) {
+    var sym = mrep[1][0];
+    var instead = sym === 'V' ? 'X (10)' : sym === 'L' ? 'C (100)' : 'M (1,000)';
+    return { ok: false, code: 'unrepeatable', suggestion: canonical, suggestionValue: total,
+      message: '“' + sym + '” can never be repeated — two of them would just be ' + instead + '.' + didYouMean };
+  }
+  var badPair = null;
+  for (var p = 0; p + 1 < letters.length; p++) {
+    var a = letters[p], b = letters[p + 1];
+    if (RN_VALUES[b] > RN_VALUES[a] && !RN_PAIRS[a + b]) { badPair = a + b; break; }
+  }
+  if (badPair) {
+    return { ok: false, code: 'bad-pair', suggestion: canonical, suggestionValue: total,
+      message: '“' + badPair + '” is not a valid subtractive pair — only IV, IX, XL, XC, CD and CM are allowed.' + didYouMean };
+  }
+  /* Ordering / misc errors: suggest the token-sum intent when available. */
+  if (canonical2 && canonical2 !== typed) {
+    return { ok: false, code: 'nonstandard', suggestion: canonical2, suggestionValue: total2,
+      message: 'That is not a standard Roman numeral (symbols must run from largest to smallest, without reusing subtracted symbols). Did you mean ' + canonical2 + ' (' + rnFmt(total2) + ')?' };
+  }
+  return { ok: false, code: 'nonstandard', suggestion: canonical, suggestionValue: total,
+    message: 'That is not a standard Roman numeral (symbols must run from largest to smallest, without reusing subtracted symbols).' + didYouMean };
+}
+
+/* Parse a number input string. Returns {ok, value} or {ok:false, code, message}. */
+function rnParseNumber(raw) {
+  var s = String(raw == null ? '' : raw).trim().replace(/[,\s]/g, '');
+  if (!s) return { ok: false, code: 'empty' };
+  if (!/^\d+$/.test(s)) return { ok: false, code: 'nan', message: 'Please enter whole digits only — for example 2026.' };
+  var n = parseInt(s, 10);
+  if (n < 1) return { ok: false, code: 'range', message: 'Roman numerals start at 1 — there is no zero and no negatives.' };
+  if (n > RN_MAX) return { ok: false, code: 'range', message: 'That is above the supported maximum of 3,999,999.' };
+  return { ok: true, value: n };
+}
+
+/*
+ * Step-by-step breakdown of a number.
+ * Returns {steps:[{symbol,value}], groups:[{place,value,roman}]} or null.
+ */
+function rnBreakdown(n) {
+  if (rnToRoman(n) === null) return null;
+  var steps = [];
+  var parts = [];
+  if (n >= 4000) {
+    parts.push({ val: Math.floor(n / 1000), mult: 1000 });
+    if (n % 1000) parts.push({ val: n % 1000, mult: 1 });
+  } else {
+    parts.push({ val: n, mult: 1 });
+  }
+  parts.forEach(function (p) {
+    var rem = p.val;
+    for (var i = 0; i < RN_TABLE.length; i++) {
+      var v = RN_TABLE[i][0], sym = RN_TABLE[i][1];
+      while (rem >= v) {
+        steps.push({ symbol: p.mult === 1000 ? rnOverline(sym) : sym, value: v * p.mult });
+        rem -= v;
+      }
+    }
+  });
+  var th = Math.floor(n / 1000) * 1000;
+  var h = Math.floor(n / 100) % 10 * 100;
+  var te = Math.floor(n / 10) % 10 * 10;
+  var o = n % 10;
+  var groups = [
+    { place: 'Thousands', value: th, roman: th ? rnToRoman(th) : '—' },
+    { place: 'Hundreds', value: h, roman: h ? rnToStandard(h) : '—' },
+    { place: 'Tens', value: te, roman: te ? rnToStandard(te) : '—' },
+    { place: 'Ones', value: o, roman: o ? rnToStandard(o) : '—' }
+  ];
+  return { steps: steps, groups: groups };
+}
+</script>
+<script>
+/* ================= UI wiring ================= */
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+
+  var numInput = $('num-input'), numError = $('num-error'),
+      numResultWrap = $('num-result-wrap'), numResult = $('num-result'),
+      numResultNote = $('num-result-note'), numGroups = $('num-groups'),
+      numSteps = $('num-steps'), numCopy = $('num-copy');
+  var romanInput = $('roman-input'), romanError = $('roman-error'),
+      romanResultWrap = $('roman-result-wrap'), romanResult = $('roman-result'),
+      romanCanonical = $('roman-canonical'), romanTokens = $('roman-tokens'),
+      romanCopy = $('roman-copy'), romanSuggestWrap = $('roman-suggest-wrap'),
+      romanSuggestBtn = $('roman-suggest-btn');
+
+  var lastNum = null, lastRoman = null;
+
+  /* ---------- history (localStorage) ---------- */
+  var HIST_KEY = 'romanly-history-v1';
+  function getHist() {
+    try { return JSON.parse(localStorage.getItem(HIST_KEY) || '[]'); } catch (e) { return []; }
+  }
+  function setHist(h) {
+    try { localStorage.setItem(HIST_KEY, JSON.stringify(h.slice(0, 10))); } catch (e) {}
+  }
+  function pushHist(entry) {
+    var h = getHist().filter(function (x) { return x.text !== entry.text; });
+    h.unshift(entry);
+    setHist(h);
+    renderHist();
+  }
+  function renderHist() {
+    var h = getHist(), list = $('hist-list');
+    $('hist-empty').style.display = h.length ? 'none' : '';
+    list.innerHTML = '';
+    h.forEach(function (x) {
+      var li = document.createElement('li');
+      li.className = 'py-2 flex items-center justify-between gap-3';
+      var span = document.createElement('span');
+      span.className = 'font-roman text-imperialdark';
+      span.textContent = x.text;
+      var btn = document.createElement('button');
+      btn.className = 'text-xs uppercase tracking-widest text-gold hover:text-imperial transition shrink-0';
+      btn.textContent = 'Reload';
+      btn.addEventListener('click', function () {
+        if (x.dir === 'n2r') { numInput.value = x.input; convertNum(); numInput.focus(); }
+        else { romanInput.value = x.input; convertRoman(); romanInput.focus(); }
+      });
+      li.appendChild(span); li.appendChild(btn);
+      list.appendChild(li);
+    });
+  }
+  $('hist-clear').addEventListener('click', function () { setHist([]); renderHist(); });
+
+  function copyText(btn, text) {
+    var done = function () {
+      var old = btn.textContent;
+      btn.textContent = 'Copied!';
+      setTimeout(function () { btn.textContent = old; }, 1200);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, function () { fallback(); });
+    } else fallback();
+    function fallback() {
+      var ta = document.createElement('textarea');
+      ta.value = text; document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); } catch (e) {}
+      document.body.removeChild(ta); done();
+    }
+  }
+  numCopy.addEventListener('click', function () { if (lastNum) copyText(numCopy, lastNum.roman); });
+  romanCopy.addEventListener('click', function () { if (lastRoman) copyText(romanCopy, String(lastRoman.value)); });
+
+  function showError(el, msg) {
+    if (!msg) { el.classList.add('hidden'); el.textContent = ''; return; }
+    el.textContent = msg; el.classList.remove('hidden');
+  }
+
+  /* ---------- number -> roman ---------- */
+  function convertNum() {
+    var parsed = rnParseNumber(numInput.value);
+    showError(numError, null);
+    numResultWrap.classList.add('hidden');
+    lastNum = null;
+    if (!parsed.ok) {
+      if (parsed.code !== 'empty') showError(numError, parsed.message);
+      return;
+    }
+    var n = parsed.value;
+    var roman = rnToRoman(n);
+    var bd = rnBreakdown(n);
+    lastNum = { value: n, roman: roman };
+    numResult.textContent = roman;
+    numResultNote.textContent = n >= 4000
+      ? 'The bar over the first letters is the overline (vinculum): it multiplies those letters by 1,000.'
+      : rnFmt(n) + ' in standard Roman numerals.';
+    var parts = bd.groups.filter(function (g) { return g.value > 0; })
+      .map(function (g) { return g.roman + ' (' + rnFmt(g.value) + ')'; });
+    numGroups.innerHTML = '';
+    var strong = document.createElement('strong');
+    strong.className = 'font-roman text-imperialdark';
+    strong.textContent = rnFmt(n) + ' = ';
+    numGroups.appendChild(strong);
+    numGroups.appendChild(document.createTextNode(parts.join(' + ')));
+    numSteps.innerHTML = '';
+    var running = n;
+    bd.steps.forEach(function (st, idx) {
+      var li = document.createElement('li');
+      li.className = 'flex items-center gap-2 bg-white/70 border border-stone-200 rounded-lg px-3 py-1.5';
+      var badge = document.createElement('span');
+      badge.className = 'w-6 h-6 shrink-0 rounded-full bg-gold/15 text-gold text-xs font-bold flex items-center justify-center';
+      badge.textContent = String(idx + 1);
+      var txt = document.createElement('span');
+      txt.innerHTML = '';
+      var b = document.createElement('b'); b.className = 'font-roman text-imperialdark'; b.textContent = st.symbol;
+      txt.appendChild(b);
+      txt.appendChild(document.createTextNode('  =  ' + rnFmt(st.value) + '    →    remaining ' + rnFmt(running - st.value)));
+      li.appendChild(badge); li.appendChild(txt);
+      numSteps.appendChild(li);
+      running -= st.value;
+    });
+    numResultWrap.classList.remove('hidden');
+    pushHist({ dir: 'n2r', input: String(n), text: rnFmt(n) + '  →  ' + roman });
+  }
+
+  /* ---------- roman -> number ---------- */
+  function convertRoman() {
+    var res = rnValidate(romanInput.value);
+    showError(romanError, null);
+    romanResultWrap.classList.add('hidden');
+    romanSuggestWrap.classList.add('hidden');
+    lastRoman = null;
+    if (!res.ok) {
+      if (res.code !== 'empty') {
+        showError(romanError, res.message);
+        if (res.suggestion) {
+          romanSuggestBtn.textContent = 'Use ' + res.suggestion + ' (' + rnFmt(res.suggestionValue) + ') instead →';
+          romanSuggestBtn.onclick = function () {
+            romanInput.value = res.suggestion;
+            convertRoman();
+            romanInput.focus();
+          };
+          romanSuggestWrap.classList.remove('hidden');
+        }
+      }
+      return;
+    }
+    lastRoman = res;
+    romanResult.textContent = rnFmt(res.value);
+    romanCanonical.textContent = 'Standard form: ' + res.roman;
+    romanTokens.innerHTML = '';
+    var running = 0;
+    res.tokens.forEach(function (tk, idx) {
+      running += tk.value;
+      var li = document.createElement('li');
+      li.className = 'flex items-center gap-2 bg-white/70 border border-stone-200 rounded-lg px-3 py-1.5';
+      var badge = document.createElement('span');
+      badge.className = 'w-6 h-6 shrink-0 rounded-full bg-imperial/10 text-imperial text-xs font-bold flex items-center justify-center';
+      badge.textContent = String(idx + 1);
+      var txt = document.createElement('span');
+      var b = document.createElement('b'); b.className = 'font-roman text-imperialdark'; b.textContent = tk.sym;
+      txt.appendChild(b);
+      txt.appendChild(document.createTextNode('  =  ' + rnFmt(tk.value) + (tk.over ? '  (overlined ×1,000)' : '') + '    →    running total ' + rnFmt(running)));
+      li.appendChild(badge); li.appendChild(txt);
+      romanTokens.appendChild(li);
+    });
+    romanResultWrap.classList.remove('hidden');
+    pushHist({ dir: 'r2n', input: romanInput.value.trim().toUpperCase(), text: res.roman + '  →  ' + rnFmt(res.value) });
+  }
+
+  numInput.addEventListener('input', convertNum);
+  romanInput.addEventListener('input', convertRoman);
+
+  /* ---------- popular chips ---------- */
+  var popular = [
+    ['2026', '2026'], ['1999', '1999'], ['2000', '2000'],
+    ['4000', '4000'], ['44444', '44444'], ['1000000', '1000000']
+  ];
+  var chipWrap = $('popular-chips');
+  popular.forEach(function (p) {
+    var b = document.createElement('button');
+    b.className = 'text-sm font-roman bg-white/70 hover:bg-white border border-gold/40 hover:border-gold text-imperialdark rounded-full px-3.5 py-1 transition shadow-sm';
+    b.textContent = p[0];
+    b.addEventListener('click', function () { numInput.value = p[1]; convertNum(); numInput.focus(); window.scrollTo({ top: 0, behavior: 'smooth' }); });
+    chipWrap.appendChild(b);
+  });
+
+  /* ---------- invalid-form lab chips ---------- */
+  var lab = ['IIII', 'VV', 'IL', 'IC', 'XXXX', 'MMMM', 'IXIX', 'VIV'];
+  var labWrap = $('invalid-chips');
+  lab.forEach(function (s) {
+    var b = document.createElement('button');
+    b.className = 'font-roman text-lg bg-imperialdark/5 hover:bg-imperialdark hover:text-amber-50 border border-imperial/30 text-imperialdark rounded-lg px-4 py-2 transition';
+    b.textContent = s;
+    b.addEventListener('click', function () {
+      romanInput.value = s;
+      convertRoman();
+      romanInput.focus();
+      romanInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+    labWrap.appendChild(b);
+  });
+
+  /* ---------- 1-100 chart ---------- */
+  var grid = $('chart-grid');
+  for (var n = 1; n <= 100; n++) {
+    (function (num) {
+      var cell = document.createElement('button');
+      cell.className = 'chart-cell tablet rounded-lg px-1 py-2 text-center hover:border-gold';
+      var top = document.createElement('div');
+      top.className = 'text-[11px] text-stone-500 leading-none mb-1';
+      top.textContent = num;
+      var bot = document.createElement('div');
+      bot.className = 'font-roman text-imperialdark text-sm sm:text-base leading-tight';
+      bot.style.fontWeight = '700';
+      bot.textContent = rnToStandard(num);
+      cell.appendChild(top); cell.appendChild(bot);
+      cell.setAttribute('aria-label', num + ' = ' + rnToStandard(num));
+      cell.addEventListener('click', function () {
+        numInput.value = String(num);
+        convertNum();
+        numInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+      grid.appendChild(cell);
+    })(n);
+  }
+
+  renderHist();
+})();
+</script>
+</body>
+</html>
